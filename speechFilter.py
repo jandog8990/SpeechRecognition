@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 
 # Pre-emphasis
 Fs, signal = scipy.io.wavfile.read('test/s1.wav')
-pre_emph = 0.97
+#emph_signal = signal
+pre_emph = 0.95
 emph_signal = np.append(signal[0], signal[1:] - pre_emph*signal[:-1]) 
 signal_len = len(emph_signal)
 
@@ -49,37 +50,72 @@ wlen = len(n)
 w = 0.54 - 0.46*np.cos((2*np.pi*n)/(N-1))
 
 # Apply Hamming window to data frames
-#frames *= w
+frames *= w
+#NFFT = 512
+
+# Compute the FFT and PSD of the spectrum
+fft_frames = np.fft.fft(frames)
+fft_frames = fft_frames[:, 0:int(round(N/2))]
+psd_frames = 1/(Fs*N)*(np.abs(fft_frames)**2)
+psd_frames[1:len(psd_frames)-1] = 2*psd_frames[1:len(psd_frames)-1]
+#psd_frames = 2*psd_frames
+
+# Create numpy array of frequencies and half the PSD to remove periodicity?
+# QUESTION: How to plot the frequencies of the current block
+freq = np.arange(0, Fs/2, Fs/N)
+row_sample = int(round(len(fft_frames)*2/4))	# sample at the half point of the matrix 
+print("Row sample = " + str(row_sample))
+
+#row_sample2 = int(round(len(fft_frames)*1/4))	# sample at the quarter point of the matrix 
+sample_frames = frames[row_sample]			# row selection for FFT frames 
+#sample_frames2 = frames[row_sample2]		# row selection for FFT frames 
+mirror_psd = psd_frames[row_sample]	# row selection for FFT frames 
+#mirror_psd = mirror_psd[0:int(round(len(mirror_psd)/2))]
 
 print("\n")
-print("Frame len = " + str(frame_len))
-print("Frame step = " + str(frame_step))
-print("Num frames = " + str(num_frames)) 
-print("\n")
-print("Signal len = " + str(signal_len))
-print("Pad signal len = " + str(pad_signal_len))
-print("Len zeros = " + str(len(z)))
-print("Num frames * frame step = " + str(num_frames_step))
-print("\n")
-print("iMatrix1 size = " + str(iMatrix1.shape))
-print("iMatrix2 size = " + str(iMatrix2.shape))
-
-print("Index Matrix:")
-print(iMatrix1)
-print("\n")
-print("Shifted Matrix:")
-print(iMatrix2)
-print("\n")
-print("Shifted Index Matrix:")
-print(iMatrix)
-print("\n")
-print("Index Matrix (int32):")
+print("Frame Block Indices:")
 print(iMatrix.astype(np.int32, copy=False))
 print("\n")
 
-print("Signal Frames:")
+print("Hamming Window Frames (size = " + str(frames.shape) + "):")
 print(frames)
 print("\n")
 
-plt.plot(w)
+
+print("Original signal len = " + str(signal_len))
+print("Pad signal len = " + str(pad_signal_len))
+print("N = frame_len = " + str(frame_len))
+print("FS/2 = " + str(Fs/2))
+print("Fs/N = " + str(Fs/N))
+print("\n")
+
+print("Frames size = " + str(frames.shape))
+print("FFT Frames size = " + str(fft_frames.shape))
+print("PSD Frames size = " + str(psd_frames.shape))
+
+print("\n")
+print("Frequency size = " + str(len(freq)))
+print("Sample frames 1 size = " + str(len(sample_frames)))
+#print("Sample frames 2 size = " + str(len(sample_frames2)))
+print("Mirror PSD Frames size = " + str(mirror_psd.shape))
+print("\n")
+
+## Plot sample frame with FFT PSD
+#plt.figure
+#plt.subplot(211)
+#plt.plot(sample_frames)
+#plt.title("PSD Short Fourier Transform")
+#plt.subplot(212)
+#plt.plot(10*np.log10(mirror_psd))
+#plt.ylabel("Power/frequency (dB/Hz)")
+#plt.xlabel("Frequency (Hz)")
+#plt.show()
+
+plt.figure
+plt.imshow(10*np.log10(psd_frames.T), cmap=plt.cm.jet, aspect='auto');
+ax = plt.gca()
+ax.invert_yaxis()
+plt.title("PSD Short Fourier Transform")
+plt.ylabel("Frequency (FFT Number)")
+plt.xlabel("Time (frame number)")
 plt.show()
