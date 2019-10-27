@@ -58,12 +58,18 @@ frames *= w
 
 # Compute the FFT and PSD of the spectrum
 fft_frames = np.fft.fft(frames)
-Nfft = len(fft_frames)
-fft_frames = fft_frames[:, 0:int(round(Nfft/2))]
+[mfft, nfft] = fft_frames.shape
+Nfft = nfft
+#fft_frames = fft_frames[:, 0:int(round(Nfft/2+1))]
 psd_frames = 1/(Fs*Nfft)*(np.abs(fft_frames)**2)
-psd_frames[1:len(psd_frames)-1] = 2*psd_frames[1:len(psd_frames)-1]
+#psd_frames[1:len(psd_frames)-1] = 2*psd_frames[1:len(psd_frames)-1]
+
+# Split the FFT frames and PSD frames in half
+psd_frames = psd_frames[:, 0:int(round(Nfft/2+1))]
+fft_frames = fft_frames[:, 0:int(round(Nfft/2+1))]
 #psd_frames = 2*psd_frames
 psd_frames = psd_frames.T
+#psd_frames -= (np.mean(psd_frames, axis=0) + 1e-8)    # normalize the psd frames
 
 # Create numpy array of frequencies and half the PSD to remove periodicity?
 # QUESTION: How to plot the frequencies of the current block
@@ -75,6 +81,8 @@ mirror_psd = psd_frames[:,row_sample]	# row selection for FFT frames (for testin
 
 # -------------------------------------------------------------------
 # Mel Frequency Cepstrum Coeffs - Calculations
+# TODO: Normalize the PSD and MFCC Spectrums only when plotting
+#
 # 1. 26 Triangular filters
 # 2. Multiply power spectrum by each filt
 # 3. Add up coefficients (26 give us energy of filterbank)
@@ -85,7 +93,7 @@ mirror_psd = psd_frames[:,row_sample]	# row selection for FFT frames (for testin
 # -------------------------------------------------------------------
 lower_freq = 0		# lower frequency for mel calc
 upper_freq = Fs/2	# upper frequency for mel calc	
-Nfcc = 10	# number of MFCC filterbanks (i.e. triangle filters) 
+Nfcc = 30	# number of MFCC filterbanks (i.e. triangle filters) 
 
 # Initialize the MFCC mel scale, freqs and bins
 freq = np.arange(0, Fs/2, Fs/(Nfft+1))
@@ -102,27 +110,25 @@ print("\n")
 print("Bin pts (len= " + str(len(bin_pts)) + ") = " + str(bin_pts)) 
 print("\n")
 
-# Create the filterbanks
-filterbank = mfcc.calc_filter_banks()
-[fm, fn] = filterbank.shape
-freqs = np.tile(freq, (fm,1))
-print("Frequencies shape = " + str(freqs.shape))
-print("MFCC Filterbank (size = " + str(filterbank.shape) + ")")
+# Create the filterbanks and normalize from the mean
+filterbanks = mfcc.calc_filter_banks()
 
-'''
-print(filterbank)
-print("\n")
-print("Sampled MFCC:")
-print(filterbank[9,:])
-print("\n")
-'''
+[fm, fn] = filterbanks.shape
+#freqs = np.tile(freq, (fm,1))
+#print("Frequencies shape = " + str(freqs.shape))
+print("MFCC Filterbank (size = " + str(filterbanks.shape) + ")")
 
-plt.figure(2)
-#plt.plot(freq, filterbank[6,:])
-#plt.plot(freqs, filterbank)
+# Compute the dot product between the power spectrum and filterbanks
+mfcc_fbanks = np.dot(psd_frames.T, filterbanks.T)
+
+plt.figure(1)
 for i in range(0,fm):
-    plt.plot(filterbank[i,:])
+    plt.plot(filterbanks[i,:])
+plt.title("MFCC Filterbank:")
 plt.show()
+
+# Frequency response of the MFCC filterbank
+#plt.imshow(10*np.log10(psd_frames), cmap=plt.cm.jet, aspect='auto');
 
 """
 print("Frame Block Indices:")
@@ -153,7 +159,38 @@ print("\n")
 print("Frequency size = " + str(len(freq)))
 #print("Sample frames size = " + str(len(sample_frames)))
 #print("Mirror PSD Frames size = " + str(mirror_psd.shape))
-print("\n")
+
+# Normalize the PSD frames for better contour viewing
+psd_frames = 20*np.log10(psd_frames)
+#psd_frames -= (np.mean(psd_frames, axis=0) + 1e-8)
+
+# Normalize the MFCC PSD Banks for better contours
+mfcc_fbanks = 20*np.log10(mfcc_fbanks)
+mfcc_fbanks -= (np.mean(mfcc_fbanks, axis=0) + 1e-8)
+
+
+plt.figure(2)
+plt.imshow(psd_frames, cmap=plt.cm.jet, aspect='auto');
+ax = plt.gca()
+ax.invert_yaxis()
+plt.title("PSD Short Fourier Spectrum")
+plt.ylabel("Frequency (FFT Number)")
+plt.xlabel("Time (frame number)")
+plt.show()
+
+plt.figure(3)
+plt.imshow(mfcc_fbanks.T, cmap=plt.cm.jet, aspect='auto')
+'''
+plt.xticks(np.arange(0, (mfcc_fbanks.T).shape[1],
+                     int((mfcc_fbanks.T).shape[1] / 4)),
+    ['0s', '0.5s', '1s', '1.5s','2.5s','3s','3.5'])
+'''
+ax = plt.gca()
+ax.invert_yaxis()
+plt.title('PSD * MFCC Filterbank Spectrum')
+plt.ylabel("Frequency (FFT Number)")
+plt.xlabel("Time (frame number)")
+plt.show()
 
 ## Plot sample frame with FFT PSD
 #plt.figure
@@ -165,14 +202,3 @@ print("\n")
 #plt.ylabel("Power/frequency (dB/Hz)")
 #plt.xlabel("Frequency (Hz)")
 #plt.show()
-
-"""
-plt.figure(3)
-plt.imshow(10*np.log10(psd_frames), cmap=plt.cm.jet, aspect='auto');
-ax = plt.gca()
-ax.invert_yaxis()
-plt.title("PSD Short Fourier Transform")
-plt.ylabel("Frequency (FFT Number)")
-plt.xlabel("Time (frame number)")
-plt.show()
-"""
