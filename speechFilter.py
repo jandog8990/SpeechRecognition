@@ -3,6 +3,9 @@ import scipy.io.wavfile
 from scipy.fftpack import dct
 import matplotlib.pyplot as plt
 
+# Local import classes
+from MFCC import MFCC 
+
 # Pre-emphasis
 Fs, signal = scipy.io.wavfile.read('test/s1.wav')
 #emph_signal = signal
@@ -55,24 +58,73 @@ frames *= w
 
 # Compute the FFT and PSD of the spectrum
 fft_frames = np.fft.fft(frames)
-fft_frames = fft_frames[:, 0:int(round(N/2))]
-psd_frames = 1/(Fs*N)*(np.abs(fft_frames)**2)
+Nfft = len(fft_frames)
+fft_frames = fft_frames[:, 0:int(round(Nfft/2))]
+psd_frames = 1/(Fs*Nfft)*(np.abs(fft_frames)**2)
 psd_frames[1:len(psd_frames)-1] = 2*psd_frames[1:len(psd_frames)-1]
 #psd_frames = 2*psd_frames
+psd_frames = psd_frames.T
 
 # Create numpy array of frequencies and half the PSD to remove periodicity?
 # QUESTION: How to plot the frequencies of the current block
-freq = np.arange(0, Fs/2, Fs/N)
+"""
 row_sample = int(round(len(fft_frames)*2/4))	# sample at the half point of the matrix 
-print("Row sample = " + str(row_sample))
-
-#row_sample2 = int(round(len(fft_frames)*1/4))	# sample at the quarter point of the matrix 
 sample_frames = frames[row_sample]			# row selection for FFT frames 
-#sample_frames2 = frames[row_sample2]		# row selection for FFT frames 
-mirror_psd = psd_frames[row_sample]	# row selection for FFT frames 
-#mirror_psd = mirror_psd[0:int(round(len(mirror_psd)/2))]
+mirror_psd = psd_frames[:,row_sample]	# row selection for FFT frames (for testing psd mirror
+"""
 
+# -------------------------------------------------------------------
+# Mel Frequency Cepstrum Coeffs - Calculations
+# 1. 26 Triangular filters
+# 2. Multiply power spectrum by each filt
+# 3. Add up coefficients (26 give us energy of filterbank)
+# 4. Take log of each of 26 energies (26 log filterbank energies)
+# 5. DCT of 26 log filterbank energies (26 cepstral coeffs)
+# 6. First 12-13 of 26 are kept
+# 7. Resulting features (12 numbers per frame) are MFCCs
+# -------------------------------------------------------------------
+lower_freq = 0		# lower frequency for mel calc
+upper_freq = Fs/2	# upper frequency for mel calc	
+Nfcc = 10	# number of MFCC filterbanks (i.e. triangle filters) 
+
+# Initialize the MFCC mel scale, freqs and bins
+freq = np.arange(0, Fs/2, Fs/(Nfft+1))
+mfcc = MFCC(Nfft, Nfcc, Fs, lower_freq, upper_freq)
+mfcc_out = mfcc.fit() 
+mel_pts = mfcc_out['mel']
+freq_pts = mfcc_out['freq']
+bin_pts = mfcc_out['bin']
+print("MFCC Output:")
+print("Mel scale (len = " + str(len(mel_pts)) + ") = " + str(mel_pts))
 print("\n")
+print("Freq pts (len = " + str(len(freq_pts)) + ") = " + str(freq_pts))
+print("\n")
+print("Bin pts (len= " + str(len(bin_pts)) + ") = " + str(bin_pts)) 
+print("\n")
+
+# Create the filterbanks
+filterbank = mfcc.calc_filter_banks()
+[fm, fn] = filterbank.shape
+freqs = np.tile(freq, (fm,1))
+print("Frequencies shape = " + str(freqs.shape))
+print("MFCC Filterbank (size = " + str(filterbank.shape) + ")")
+
+'''
+print(filterbank)
+print("\n")
+print("Sampled MFCC:")
+print(filterbank[9,:])
+print("\n")
+'''
+
+plt.figure(2)
+#plt.plot(freq, filterbank[6,:])
+#plt.plot(freqs, filterbank)
+for i in range(0,fm):
+    plt.plot(filterbank[i,:])
+plt.show()
+
+"""
 print("Frame Block Indices:")
 print(iMatrix.astype(np.int32, copy=False))
 print("\n")
@@ -85,7 +137,11 @@ print("\n")
 print("Original signal len = " + str(signal_len))
 print("Pad signal len = " + str(pad_signal_len))
 print("N = frame_len = " + str(frame_len))
-print("FS/2 = " + str(Fs/2))
+print("\n")
+"""
+
+print("Fs = " + str(Fs))
+print("Fs/2 = " + str(Fs/2))
 print("Fs/N = " + str(Fs/N))
 print("\n")
 
@@ -95,9 +151,8 @@ print("PSD Frames size = " + str(psd_frames.shape))
 
 print("\n")
 print("Frequency size = " + str(len(freq)))
-print("Sample frames 1 size = " + str(len(sample_frames)))
-#print("Sample frames 2 size = " + str(len(sample_frames2)))
-print("Mirror PSD Frames size = " + str(mirror_psd.shape))
+#print("Sample frames size = " + str(len(sample_frames)))
+#print("Mirror PSD Frames size = " + str(mirror_psd.shape))
 print("\n")
 
 ## Plot sample frame with FFT PSD
@@ -111,11 +166,13 @@ print("\n")
 #plt.xlabel("Frequency (Hz)")
 #plt.show()
 
-plt.figure
-plt.imshow(10*np.log10(psd_frames.T), cmap=plt.cm.jet, aspect='auto');
+"""
+plt.figure(3)
+plt.imshow(10*np.log10(psd_frames), cmap=plt.cm.jet, aspect='auto');
 ax = plt.gca()
 ax.invert_yaxis()
 plt.title("PSD Short Fourier Transform")
 plt.ylabel("Frequency (FFT Number)")
 plt.xlabel("Time (frame number)")
 plt.show()
+"""
