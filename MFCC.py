@@ -56,9 +56,6 @@ class MFCC():
 		self.mel_pts = np.linspace(mel_lower, mel_upper, self.Nfcc+2)	
 		self.freq_pts = self.Bfcc*(np.exp(self.mel_pts/self.Afcc) - 1) 
 		self.bin_pts = np.floor((self.Nfft)*self.freq_pts/self.Fs)
-		print("Mel pts size = " + str(len(self.mel_pts)))
-		print("Freq pts size = " + str(len(self.freq_pts)))
-		print("Bin pts size = " + str(len(self.bin_pts)))
 
 		mfccMap['mel'] = self.mel_pts
 		mfccMap['freq'] = self.freq_pts
@@ -74,23 +71,11 @@ class MFCC():
 
 		# Matrix of filterbanks (rowlen = num_filteranks, colen = numfft)
 		fbank = np.zeros((Nfcc, int(np.floor((self.Nfft/2+1)))))
-		print("MFCC Filterbank:")	
 		# Loop through the rows of the filterbank matrix (one row per bank)	
 		for m in np.arange(1, Nfcc+1):
 			f_m_minus = int(bin_pts[m-1])	# left triangle pt
 			f_m = int(bin_pts[m])			# center triangle pt
 			f_m_plus = int(bin_pts[m+1])	# right triangle pt
-			"""	
-			print("	m index = " + str(m))	
-			print("	m minus = " + str(m-1))
-			print("	m plus = " + str(m+1))
-			print("\n")
-
-			print("	bin_pts[m-1] = " + str(bin_pts[m-1])) 
-			print("	bin_pts[m] = " + str(bin_pts[m])) 
-			print("	bin_pts[m+1] = " + str(bin_pts[m+1])) 
-			print("\n")
-			"""
 
 			# Loop through left triangular pts (see Hm(k) function)	
 			for k in np.arange(f_m_minus, f_m):
@@ -108,10 +93,6 @@ class MFCC():
 	def calc_mfcc_dct(self, filter_banks, num_mfcc):
 		mfcc = dct(filter_banks, type=2, axis=1, norm='ortho')
 		mfcc = mfcc[:, 1:(num_mfcc+1)]	# pull the 2nd to the num_mfcc+1 entries	
-
-		print("DCT MFCC Output (size = " + str(mfcc.shape) + "):")
-		print(mfcc)
-		print("\n")
 		
 		return mfcc
 	
