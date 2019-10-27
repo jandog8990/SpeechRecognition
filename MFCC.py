@@ -10,6 +10,7 @@ for human auditory perception
 @author: alejandrogonzales
 """
 import numpy as np
+from scipy.fftpack import dct
 
 # Mel Frequency Cepstrum Coefficients Class
 # TODO remove all refs to self and replace with local vars
@@ -62,9 +63,9 @@ class MFCC():
 		mfccMap['mel'] = self.mel_pts
 		mfccMap['freq'] = self.freq_pts
 		mfccMap['bin'] = self.bin_pts	
-		
-		return mfccMap 
 	
+		return mfccMap
+
 	# Calculate the filterbanks (i.e. triangular filters)
 	def calc_filter_banks(self):
 		# initalize filterbank matrix and other dep. vars 
@@ -101,3 +102,38 @@ class MFCC():
 				
 
 		return fbank	
+
+    # Calculate the Mel Frequency Cepstrum Coefficients (ie acoustic vector)
+    # Each utterance is transformed into sequence of acoustic vectors
+	def calc_mfcc_dct(self, filter_banks, num_mfcc):
+		mfcc = dct(filter_banks, type=2, axis=1, norm='ortho')
+		mfcc = mfcc[:, 1:(num_mfcc+1)]	# pull the 2nd to the num_mfcc+1 entries	
+
+		print("DCT MFCC Output (size = " + str(mfcc.shape) + "):")
+		print(mfcc)
+		print("\n")
+		
+		return mfcc
+	
+	# Apply sin lifter to the MFCC matrix
+	def calc_mfcc_lift(self, mfcc, num_lift):
+		# apply liftering to remove high quefrencies from the MFCCs
+		[nframes, ncoeffs] = mfcc.shape	# get the coefficients
+		n = np.arange(ncoeffs)			# indices for mfcc coefficients
+		slift = 1 + (num_lift/2)*np.sin((np.pi*n)/2)	# sin lifter for high quefrencies	
+		mfcc_lift = mfcc*slift	
+		
+		print("Sin Lifter (size = " + str(len(slift)) + "):")	
+		print(slift)
+		print("\n")
+
+		print("MFCC Lift Output (size = " + str(mfcc_lift.shape) + "):")
+		print(mfcc_lift)
+		print("\n")
+
+
+		# TODO To improve the MFCCs, that is to reduce the dependency on higher and
+		# and lower frequencies in the vocal tract we need to apply liftering, that
+		# is filtering in the quefrency domain (ie cepstrum domain)
+
+		return mfcc_lift

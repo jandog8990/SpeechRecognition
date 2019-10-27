@@ -1,6 +1,5 @@
 import numpy as np
 import scipy.io.wavfile
-from scipy.fftpack import dct
 import matplotlib.pyplot as plt
 
 # Local import classes
@@ -58,15 +57,12 @@ psd_frames = psd_frames[:, 0:int(round(Nfft/2+1))]
 fft_frames = fft_frames[:, 0:int(round(Nfft/2+1))]
 psd_frames = psd_frames.T
 
+"""
 print("Fs = " + str(Fs))
 print("Fs/2 = " + str(Fs/2))
 print("Fs/N = " + str(Fs/N))
 print("\n")
-
-print("Frames size = " + str(frames.shape))
-print("FFT Frames size = " + str(fft_frames.shape))
-print("PSD Frames size = " + str(psd_frames.shape))
-print("\n")
+"""
 
 # -------------------------------------------------------------------
 # Mel Frequency Cepstrum Coeffs - Calculations
@@ -104,16 +100,37 @@ mfcc_fbanks = np.dot(psd_frames.T, filterbanks.T)
 # Normalize the PSD frames for better contour viewing
 psd_frames = 20*np.log10(psd_frames)
 #psd_frames -= (np.mean(psd_frames, axis=0) + 1e-8)
+psd_frames = np.where(psd_frames == 0, np.finfo(float).eps, psd_frames)  # Numerical Stability
 
 # Normalize the MFCC PSD Banks for better contours
 mfcc_fbanks = 20*np.log10(mfcc_fbanks)
+mfcc_fbanks = np.where(mfcc_fbanks == 0, np.finfo(float).eps, mfcc_fbanks)  # Numerical Stability
 mfcc_fbanks -= (np.mean(mfcc_fbanks, axis=0) + 1e-8)
+
+# Calculate the MFCCs using the DCT (Discrete Cosine Transform)
+# Pass the MFCC filterbanks and the number of desired coefficients
+num_mfcc = 12	# number of MFCCs to compute
+num_lift = 23	# number of coefficients for sin lifter (quefrency BP filter)
+mfccs = mfcc.calc_mfcc_dct(mfcc_fbanks, num_mfcc)
+mfccs = np.where(mfccs == 0, np.finfo(float).eps, mfccs)  # Numerical Stability
+mfccs_lift = mfcc.calc_mfcc_lift(mfccs, num_lift)
+mfccs -= (np.mean(mfccs, axis=0) + 1e-8)
+mfccs_lift -= (np.mean(mfccs_lift, axis=0) + 1e-8)
+#mfccs_psd = 20*np.log10(mfccs.T)
 
 plt.figure(1)
 for i in range(0,fm):
     plt.plot(filterbanks[i,:])
 plt.title("MFCC Filterbank:")
 plt.show()
+
+print("Frames size = " + str(frames.shape))
+print("FFT Frames size = " + str(fft_frames.shape))
+print("PSD Frames size = " + str(psd_frames.shape))
+print("MFCC Filterbanks size = " + str(mfcc_fbanks.shape))
+print("MFCCs size = " + str(mfccs.shape))
+print("MFCCs Lift size = " + str(mfccs_lift.shape))
+print("\n")
 
 plt.figure(2)
 plt.imshow(psd_frames, cmap=plt.cm.jet, aspect='auto');
@@ -128,10 +145,29 @@ plt.figure(3)
 plt.imshow(mfcc_fbanks.T, cmap=plt.cm.jet, aspect='auto')
 ax = plt.gca()
 ax.invert_yaxis()
-plt.title('PSD * MFCC Filterbank Spectrum')
+plt.title('Normalized PSD * MFCC Filterbank Spectrum')
 plt.ylabel("Frequency (FFT Number)")
 plt.xlabel("Time (frame number)")
 plt.show()
+
+plt.figure(4)
+plt.imshow(mfccs.T, cmap=plt.cm.jet, aspect='auto')
+ax = plt.gca()
+ax.invert_yaxis()
+plt.title("Normalized Speaker MFCCs")
+plt.ylabel("MFCC Coefficients")
+plt.xlabel("Time (frame number)")
+plt.show()
+
+plt.figure(5)
+plt.imshow(mfccs_lift.T, cmap=plt.cm.jet, aspect='auto')
+ax = plt.gca()
+ax.invert_yaxis()
+plt.title("Normalized Speaker Lifted MFCCs (quefrency liftering)")
+plt.ylabel("MFCC Coefficients")
+plt.xlabel("Time (frame number)")
+plt.show()
+
 
 ## Plot sample frame with FFT PSD
 #plt.figure
