@@ -9,7 +9,7 @@ function c = vqlbg(d, k)
 %       c contains the result VQ codebook (k columns, one for each centroids)
 
 e = 0.01;
-dist_thresh = 5.5;
+dist_thresh = 6;
 q=1;
 %computes the initial centroid of all the acoustic vectors
 centr = mean(d,2);

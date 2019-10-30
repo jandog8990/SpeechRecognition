@@ -125,7 +125,7 @@ mfccs_lift = mfcc.calc_mfcc_lift(mfccs, num_lift)
 
 # Run LBG/K-Means Clustering algorithm
 eps = 0.01
-K = 0
+K = 2 
 lbg = LBG(eps, K)
 clusters = lbg.run_clustering(mfccs.T)
 
