@@ -10,9 +10,9 @@ numChan = 1;
 audioInfo = audiodevinfo;       % your machines info
 inputID = audioInfo.input.ID; % ID of your input
 recorder = audiorecorder(Fs, bits, numChan, inputID);
+disp("Please talk for 4 sec...")
 record(recorder)
-disp("Please talk for 5 sec...")
-pause(8)
+pause(4)
 stop(recorder)
 play(recorder)
 y = getaudiodata(recorder);

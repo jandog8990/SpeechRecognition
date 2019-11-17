@@ -123,12 +123,6 @@ mfccs_lift = mfcc.calc_mfcc_lift(mfccs, num_lift)
 #mfccs -= (np.mean(mfccs, axis=0) + 1e-8)
 #mfccs_lift -= (np.mean(mfccs_lift, axis=0) + 1e-8)
 
-# Run LBG/K-Means Clustering algorithm
-eps = 0.01
-K = 2 
-lbg = LBG(eps, K)
-clusters = lbg.run_clustering(mfccs.T)
-
 print("Frames size = " + str(frames.shape))
 print("FFT Frames size = " + str(fft_frames.shape))
 print("PSD Frames size = " + str(psd_frames.shape))
@@ -137,44 +131,56 @@ print("MFCCs size = " + str(mfccs.shape))
 print("MFCCs Lift size = " + str(mfccs_lift.shape))
 print("\n")
 
-plt.figure(1)
-for i in range(0,fm):
-    plt.plot(filterbanks[i,:])
-plt.title("MFCC Filterbank:")
-plt.show()
+# Run LBG/K-Means Clustering algorithm
+eps = 0.01
+K = 2 
+lbg = LBG(eps, K)
+clusters = lbg.run_clustering(mfccs.T)
 
-plt.figure(2)
-plt.imshow(psd_frames, cmap=plt.cm.jet, aspect='auto');
-ax = plt.gca()
-ax.invert_yaxis()
-plt.title("PSD Short Fourier Spectrum")
-plt.ylabel("Frequency (FFT Number)")
-plt.xlabel("Time (frame number)")
-plt.show()
+# Plot the function outputs in a separate window
+#from IPython import get_ipython
+#get_ipython().run_line_magic('matplotlib', 'qt')
 
-plt.figure(3)
-plt.imshow(mfcc_fbanks.T, cmap=plt.cm.jet, aspect='auto')
-ax = plt.gca()
-ax.invert_yaxis()
-plt.title('PSD * MFCC Filterbank Spectrum')
-plt.ylabel("Frequency (FFT Number)")
-plt.xlabel("Time (frame number)")
-plt.show()
-
-plt.figure(4)
-plt.imshow(mfccs.T, cmap=plt.cm.jet, aspect='auto')
-ax = plt.gca()
-ax.invert_yaxis()
-plt.title("Speaker MFCCs")
-plt.ylabel("MFCC Coefficients")
-plt.xlabel("Time (frame number)")
-plt.show()
-
-plt.figure(5)
-plt.imshow(mfccs_lift.T, cmap=plt.cm.jet, aspect='auto')
-ax = plt.gca()
-ax.invert_yaxis()
-plt.title("Speaker Lifted MFCCs (quefrency liftering)")
-plt.ylabel("MFCC Coefficients")
-plt.xlabel("Time (frame number)")
-plt.show()
+#plt.figure(1)
+#for i in range(0,fm):
+#    plt.plot(filterbanks[i,:])
+#plt.title("MFCC Filterbank:")
+#plt.xlabel("Frequency (Hz)");
+#plt.ylabel("dB");
+#plt.show()
+#
+#plt.figure(2)
+#plt.imshow(psd_frames, cmap=plt.cm.jet, aspect='auto');
+#ax = plt.gca()
+#ax.invert_yaxis()
+#plt.title("PSD Short Fourier Spectrum")
+#plt.ylabel("Frequency (FFT Number)")
+#plt.xlabel("Time (frame number)")
+#plt.show()
+#
+#plt.figure(3)
+#plt.imshow(mfcc_fbanks.T, cmap=plt.cm.jet, aspect='auto')
+#ax = plt.gca()
+#ax.invert_yaxis()
+#plt.title('PSD * MFCC Filterbank Spectrum')
+#plt.ylabel("Frequency (FFT Number)")
+#plt.xlabel("Time (frame number)")
+#plt.show()
+#
+#plt.figure(4)
+#plt.imshow(mfccs.T, cmap=plt.cm.jet, aspect='auto')
+#ax = plt.gca()
+#ax.invert_yaxis()
+#plt.title("Speaker MFCCs")
+#plt.ylabel("MFCC Coefficients")
+#plt.xlabel("Time (frame number)")
+#plt.show()
+#
+#plt.figure(5)
+#plt.imshow(mfccs_lift.T, cmap=plt.cm.jet, aspect='auto')
+#ax = plt.gca()
+#ax.invert_yaxis()
+#plt.title("Speaker Lifted MFCCs (quefrency liftering)")
+#plt.ylabel("MFCC Coefficients")
+#plt.xlabel("Time (frame number)")
+#plt.show()
