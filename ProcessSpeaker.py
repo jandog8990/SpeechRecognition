@@ -226,13 +226,6 @@ print(mfccs_lift.shape);
 print(mfccs_lift);
 print("\n")
 
-# Run LBG/K-Means Clustering algorithm
-eps = 0.01
-K = 2 
-#lbg = LBG(eps, K)
-#clusters = lbg.run_clustering(mfccs.T)
-#lbg.run_lbg();
-
 # Set the scalar for standardizing the data
 normalized_mfcc_lift = preprocessing.normalize(mfccs_lift.T)
 normalized_mfcc = preprocessing.normalize(mfccs.T)
@@ -254,6 +247,13 @@ scipy.io.savemat(outputFile, mdict={'mfcc': normalized_mfcc_lift});
 #scipy.io.savemat(outputFile, mdict={'mfcc': mfccs.T})
 #scipy.io.savemat(outputFile, mdict={outputKey: mfccs_lift.T})
 #scipy.io.savemat('./train/s1_mfcc.mat', mdict={s1_mfcc: mfccs.T})
+
+# Run LBG/K-Means Clustering algorithm
+eps = 0.01
+K = 2 
+#lbg = LBG(eps, K)
+#clusters = lbg.run_clustering(mfccs.T)
+lbg.run_lbg();
 
 # Plot the function outputs in a separate window
 #from IPython import get_ipython
