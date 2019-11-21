@@ -25,7 +25,7 @@ for i = 0 : floor((length(s)-N+M)/M-1)
 %     imagesc(frames)
 
     %applys the Hamming windowing to the framed signal;
-    win_frames(: , i+1) = frame.*w_n;
+    win_frames(: , i+1) = frame'.*w_n;
 
 end
 
@@ -54,8 +54,9 @@ c = [];
 for i = 1 : size(ms,2)
     %computes the mel-freequency cepstrum coefficients of each column of
     %the mel-frequency spectrum
-    c(:, i) = dct(log(ms(:,i)));
+    c(:, i) = dct(10*log10(ms(:,i)));
 end
+c = normalize(c);
 
 %excludes the 0'th order cepstral coefficient; each column is the cepstrum
 %coefficient for one of the blocked frames.

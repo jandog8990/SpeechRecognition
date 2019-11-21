@@ -18,6 +18,7 @@ class MFCC():
 
 	# Initialize input constructor vars
 	Afcc = 1125	# amplitude of MFCC calculation (default see Mel scale equation)	
+	#Afcc = 2595 # amplitude of MFCC calculation (default see Mel scale equation)	
 	Bfcc = 700	# amplitude for exponential calculation (see Mel scale equation)	
 	Nfft = 0	# number of FFT pts	
 	Nfcc = 0	# number of MFCC filterbanks	
@@ -53,8 +54,11 @@ class MFCC():
 		mfccMap = {}	
 		mel_lower = self.Afcc*np.log(1 + self.lower_freq/self.Bfcc)
 		mel_upper = self.Afcc*np.log(1 + self.upper_freq/self.Bfcc)
+        #mel_lower = self.Afcc*np.log10(1 + self.lower_freq/self.Bfcc)
+		#mel_upper = self.Afcc*np.log10(1 + self.upper_freq/self.Bfcc)
 		self.mel_pts = np.linspace(mel_lower, mel_upper, self.Nfcc+2)	
 		self.freq_pts = self.Bfcc*(np.exp(self.mel_pts/self.Afcc) - 1) 
+		#self.freq_pts = self.Bfcc*(10**(self.mel_pts/self.Afcc) - 1) 
 		self.bin_pts = np.floor((self.Nfft)*self.freq_pts/self.Fs)
 
 		mfccMap['mel'] = self.mel_pts
@@ -101,16 +105,8 @@ class MFCC():
 		# apply liftering to remove high quefrencies from the MFCCs
 		[nframes, ncoeffs] = mfcc.shape	# get the coefficients
 		n = np.arange(ncoeffs)			# indices for mfcc coefficients
-		slift = 1 + (num_lift/2)*np.sin((np.pi*n)/2)	# sin lifter for high quefrencies	
+		slift = 1 + (num_lift/2)*np.sin((np.pi*n)/num_lift)	# sin lifter for high quefrencies
 		mfcc_lift = mfcc*slift	
-		
-		print("Sin Lifter (size = " + str(len(slift)) + "):")	
-		print(slift)
-		print("\n")
-
-		print("MFCC Lift Output (size = " + str(mfcc_lift.shape) + "):")
-		print(mfcc_lift)
-		print("\n")
 
 
 		# TODO To improve the MFCCs, that is to reduce the dependency on higher and

@@ -1,2 +1,9 @@
 *.wav
 *.png
+*.DS*
+.*.swp
+*.pyc
+*.m~
+__pycache*
+test/
+train/

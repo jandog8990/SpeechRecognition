@@ -15,11 +15,6 @@ function d = disteu(x, y)
 [M, N] = size(x);
 [M2, P] = size(y); 
 
-disp("Train Matrix size = [M, N] = [" + M + ", " + N + "]")
-disp("Centroid Matrix size = [M2, P] = [" + M2 + ", " + P + "]")
-disp("\n")
-
-
 if (M ~= M2)
     error('Matrix dimensions do not match.')
 end

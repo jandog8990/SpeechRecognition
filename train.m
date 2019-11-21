@@ -17,12 +17,13 @@ function code = train(traindir, n)
 k = 16;                         % number of centroids required
 
 for i = 1:n                     % train a VQ codebook for each speaker
-    file = sprintf('%ss%d.wav', traindir, i);           
-    disp(file);
+%     s = 's';
+    file = sprintf('%s/s%d.wav', traindir, i);           
+    disp("Train file = " + file);
    
-    [s, fs] = wavread(file);
-    
+    [s, fs] = audioread(file);
+
     v = mfcc(s, fs);            % Compute MFCC's
-   
+
     code{i} = vqlbg(v, k);      % Train VQ codebook
 end

@@ -14,10 +14,16 @@ function test(testdir, n, code)
 %       >> test('C:\data\test\', 8, code);
 
 for k = 1:n                     % read test sound file of each speaker
-    file = sprintf('%ss%d.wav', testdir, k);
-    [s, fs] = wavread(file);      
-        
-    v = mfcc(s, fs);            % Compute MFCC's
+%     file = sprintf('%s/s%d.wav', testdir, k);
+%     [s, fs] = audioread(file);   
+%         
+%     v = mfcc(s, fs);            % Compute MFCC's
+
+    % Pull MFCC from Python mat files
+    file = testdir + string(k) + "_mfcc.mat";
+    mfcc = load(file);
+    v = mfcc.mfcc;
+    MFCC{k} = v;
    
     distmin = inf;
     k1 = 0;
@@ -32,6 +38,6 @@ for k = 1:n                     % read test sound file of each speaker
         end      
     end
    
-    msg = sprintf('Speaker %d matches with speaker %d', k, k1);
+    msg = sprintf('Test Speaker %d matches with Train Speaker %d', k, k1);
     disp(msg);
 end

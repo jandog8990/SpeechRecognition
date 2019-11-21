@@ -15,8 +15,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from IPython import get_ipython
-get_ipython().run_line_magic('matplotlib', 'inline')
+#from IPython import get_ipython
+#get_ipython().run_line_magic('matplotlib', 'inline')
+#%matplotlib inline
 
 """
 TODO: This function currently uses two 20-D vectors for training
@@ -35,6 +36,37 @@ class LBG():
     def __init__(self, eps, K):
         self.eps = eps
         self.K = K
+
+    # Initial Cluster assignment using centroid vectors
+    def assignment(self, df, centroids, colormap):
+        for i in centroids.keys():
+            df['distance_from_{}'.format(i)] = (
+                np.sqrt(
+                    (df['x'] - centroids[i][0]) ** 2
+                        + (df['y'] - centroids[i][1]) ** 2
+                )
+            )
+        centroid_distance_cols = ['distance_from_{}'.format(i) for i in centroids.keys()]
+        df['closest'] = df.loc[:,centroid_distance_cols].idxmin(axis=1)
+        df['closest'] = df['closest'].map(lambda x: int(x.lstrip('distance_from_')))
+        df['color'] = df['closest'].map(lambda x: colormap[x])
+
+        print("DF Closest Distance From Matrix:")
+        print(df)
+        print("\n")
+
+        print("Centroid Cols:")
+        print(centroid_distance_cols)
+        print("\n")
+
+        return [centroid_distance_cols, df]
+
+    # Generate test centroids
+    ''' 
+    def test_centroids(self, df, colormap):
+
+        return centroids
+    '''
 
     # Run LBG/K-Means clustering on input training vector matrix
     def run_clustering(self, training_vectors):
@@ -109,71 +141,49 @@ class LBG():
         })
         print(df)
         print("\n")
+        np.random.seed(200)
+        k = 3
+        centroids = {
+            i+1: [np.random.randint(0,80), np.random.randint(0,80)]
+            for i in range(k)
+        }
+        print("\n")
+        print("Initial Centroids")
+        print(centroids)
+        print("\n")
+
+        '''
+        fig = plt.figure(figsize=(5,5))
+        plt.scatter(df['x'], df['y'], facecolors='none', color='k')
+        for i in centroids.keys():
+            plt.scatter(*centroids[i], color=colormap[i])
+        plt.xlim(0,80)
+        plt.ylim(0,80)
+        plt.show()
+        '''
 
         # WTF Am i doing here and why is it random?
         #np.random.seed(200)
             #i+1: [np.random.randint(0,Mc), np.random.randint(1,Nc)]
-        centroids = {
-            i+1: [np.random.randint(0, Mc)]
-            for i in range(k)
-        }
-            
-        print("\n")
-        print("Initial Centroids Indices")
-        print(centroids)
-        print("\n")
-
-        print("Centroid Matrix Sample:")
-        centroid_samp = centroid_matrix[centroids[1],:][0]
-        print(type(centroid_samp))
-        cx = centroid_samp[0]
-        cy = centroid_samp[1]
-        print(centroid_samp)
-        print(cx)
-        print(cy)
-        print("\n")
-
-#        colormap = {1: 'r', 2: 'g', 3: 'b'}
+        ran_row = np.random.randint(0, Mc) 
+        centroid_samp1 = centroid_matrix[start,:]
+        centroid_samp2 = centroid_matrix[end,:]
+        centroids = []
+        
+        # Plot the sample points for the centroid
+        '''
         fig = plt.figure(figsize=(5,5))
         plt.scatter(df['x'], df['y'], facecolors='none', color='b')
         plt.scatter(cx, cy, c='r')
-        """
-        for i in centroids.keys():
-            # the pointer references the value in the array
-            plt.scatter(*centroids[i], color=colormap[i])
-        """
-#        plt.xlim(0,80)
-#        plt.ylim(0,80)
         plt.show()
+        '''
+        
+        # Colormap for centroids
+        colormap = {1: 'r', 2: 'g'}
+#        centroids = self.test_centroids(df, colormap)
+#        centroids = 
 
-        # -----------------------------
-        # Initial Cluster assignment
-        # -----------------------------
-        """
-        def assignment(df, centroids):
-            for i in centroids.keys():
-                df['distance_from_{}'.format(i)] = (
-                    np.sqrt(
-                        (df['x'] - centroids[i][0]) ** 2
-                            + (df['y'] - centroids[i][1]) ** 2
-                    )
-                )
-            centroid_distance_cols = ['distance_from_{}'.format(i) for i in centroids.keys()]
-            df['closest'] = df.loc[:,centroid_distance_cols].idxmin(axis=1)
-            df['closest'] = df['closest'].map(lambda x: int(x.lstrip('distance_from_')))
-            df['color'] = df['closest'].map(lambda x: colormap[x])
-
-            print("DF Closest Distance From Matrix:")
-            print(df)
-            print("\n")
-
-            print("Centroid Cols:")
-            print(centroid_distance_cols)
-            print("\n")
-
-            return [centroid_distance_cols, df]
-
-        [centroid_distance_cols, df] = assignment(df, centroids)
+        [centroid_distance_cols, df] = self.assignment(df, centroids, colormap)
         print(df.head())
         print("\n")
 
@@ -188,6 +198,7 @@ class LBG():
         # --------------------------------------------
         # Update the cluster with new centroid means
         # --------------------------------------------
+        """
         import copy
 
         old_centroids = copy.deepcopy(centroids)
