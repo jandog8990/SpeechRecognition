@@ -41,6 +41,19 @@ print(mfcc.shape);
 print(mfcc);
 print("\n");
 
+# Create the DataFrame with all of the MFCC data vectors
+data = {}
+print("Data:")
+for i in range(M):
+    axis = string.ascii_lowercase[i]
+    row = mfcc[i,:]
+    data[axis] = row
+data_frame = pd.DataFrame(data)
+print("Data Frame:")
+print(data_frame.shape)
+print(data_frame)
+print("\n")
+
 # Pull the first row and average for a test
 row1 = mfcc[1,:]
 row1m = np.mean(row1)
@@ -65,8 +78,15 @@ print("\n");
 centroids[0] = centroid - delta
 centroids[1] = centroid + delta
 print("Centroid Dict:")
-print(centroids.shape)
 print(centroids)
 print("\n")
 
-        
+# Print the initial data along with the first centroid
+# We will plot the first two columns
+colormap = {0: 'r', 1: 'g', 2: 'b', 3: 'p'}
+fig = plt.figure(figsize=(5,5))
+plt.scatter(data_frame['h'], data_frame['i'], color='k')
+for i in centroids.keys():
+    print("key = " + str(i));
+    plt.scatter(*centroids[i][0:2], color=colormap[i])
+plt.show()
