@@ -26,6 +26,8 @@ delta = 0.01;   # delta for splitting the centroids
 eps = 4.9;      # epsilon distortion limit for centroids
 k = 16;         # number of codewords per codebook
 
+# Color map for centroids and data partition clusters
+colormap = {0: 'r', 1: 'g', 2: 'b', 3: 'p', 4: 'c', 5: 'm', 6: 'y', 7: 'gray', 8: 'greenyellow'}
 
 MFCC = {}
 # From the MFCC we will use LBG algorithm to find distances (clustering)
@@ -97,19 +99,13 @@ def nearest_neighbor(df, centroids):
 
     # Set the distance from centroid column in the data frame
     centroid_distance_cols = ['distance_from_{}'.format(i) for i in centroids.keys()]
-    print("Centroid Distance Cols:")
-    print(centroid_distance_cols)
-    print("\n")
    
     # Set the minimum distances for each data point to nearest centroid
     df['closest'] = df.loc[:,centroid_distance_cols].idxmin(axis=1) # find the minimum of all cols
     df['closest'] = df['closest'].map(lambda x: int(x.lstrip('distance_from_')))
-   
-    # Show the final DataFrame of minimum distances
-    print("Final Data Frame:")
-    print(df);
-    print("\n")
+    df['color'] = df['closest'].map(lambda x: colormap[x])
 
+    return [centroid_distance_cols, df]
 
 
 # Pull the first row and average for a test
@@ -138,15 +134,29 @@ print("\n")
 
 # Print the initial data along with the first centroid
 # We will plot the first two columns
-'''
-colormap = {0: 'r', 1: 'g', 2: 'b', 3: 'p'}
 fig = plt.figure(figsize=(5,5))
-plt.scatter(data_frame['h'], data_frame['i'], color='k')
+plt.scatter(data_frame['g'], data_frame['h'], color='k')
 for i in centroids.keys():
     print("key = " + str(i));
-    plt.scatter(*centroids[i][0:2], color=colormap[i])
+    plt.scatter(*centroids[i][6:8], color=colormap[i])
 plt.show()
-'''
 
 # Calculate the initial neighbor partitions
-nearest_neighbor(data_frame, centroids)
+[centroid_distance_cols, df] = nearest_neighbor(data_frame, centroids)
+   
+# Show the final DataFrame of minimum distances
+print("Centroid Distance Cols:")
+print(centroid_distance_cols)
+print("\n")
+
+print("Final Data Frame:")
+print(df);
+print("\n")
+  
+# Plot the updated centroids prior to the loop of fitting
+fig = plt.figure(figsize=(5,5))
+plt.scatter(data_frame['g'], data_frame['h'], color=df['color'], alpha=0.2, edgecolor='k')
+for i in centroids.keys():
+    print("key = " + str(i));
+    plt.scatter(*centroids[i][6:8], color=colormap[i])
+plt.show()
