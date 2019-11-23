@@ -31,6 +31,15 @@ print("\n")
 # ----------------------------------------------------------------------
 def assignment(df, centroids):
     for i in centroids.keys():
+        print("Centroid [i, 0] = [" + str(i) + ", 0]")
+        print(centroids[i][0])
+
+        # X difference vector
+        diffx = df['x'] - centroids[i][0]
+        print("X Diff:");
+        print(diffx);
+        print("\n")
+        
         df['distance_from_{}'.format(i)] = (
             np.sqrt(
                 (df['x'] - centroids[i][0]) ** 2
@@ -43,6 +52,10 @@ def assignment(df, centroids):
     df['closest'] = df.loc[:,centroid_distance_cols].idxmin(axis=1)
     df['closest'] = df['closest'].map(lambda x: int(x.lstrip('distance_from_')))
     df['color'] = df['closest'].map(lambda x: colormap[x])
+
+    print("Final Data Frame:")
+    print(df)
+    print("\n")
 
     return [centroid_distance_cols, df]
 
@@ -104,6 +117,7 @@ plt.ylim(0, 80)
 plt.show()
 
 # Continue until all assigned categories do not change
+'''
 print("While Loop:")
 count = 0
 while True:
@@ -156,3 +170,4 @@ while True:
     count = count + 1
 
 
+'''
