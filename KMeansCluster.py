@@ -16,18 +16,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 #%matplotlib inline
-
-# TODO THis is a test to see if we can even get the codes
-# Load the current MFCC Lifted numpy arrays from file
-npy_dir = "./train/";
-N = 6;
-MFCC = {}
-for i in np.arange(1, N):
-    filename = npy_dir + "s" + str(i) + "_mfcc_lift.npy"
-    mfcc = np.load(filename)
-    MFCC[i] = mfcc
     
-
+# Columns of 2D vectors (i.e. x, y are vectors in space)
 df = pd.DataFrame({
     'x': [12, 20, 28, 18, 29, 33, 24, 45, 45, 52, 51, 52, 55, 53, 55, 61, 64, 69, 72],
     'y': [39, 36, 30, 52, 54, 46, 55, 59, 63, 70, 66, 63, 58, 23, 14, 8, 19, 7, 24]
@@ -75,6 +65,8 @@ centroids = {
 }
 print("\n")
 print("Initial Centroids")
+print("Centroid type = " + str(type(centroids)))
+print("Centroid len = " + str(len(centroids)))
 print(centroids)
 print("\n")
 

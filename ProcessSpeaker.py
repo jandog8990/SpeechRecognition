@@ -32,6 +32,7 @@ if arguments != 2:
 
 fileType = str(sys.argv[1])
 numFiles = int(sys.argv[2])
+speaker = "s" + str(numFiles)
 fileDir = fileType + "/"
 audioFile = fileDir + "s" + str(numFiles) + ".wav"
 outputKey = "s" + str(numFiles) + "_" + fileType 
@@ -241,6 +242,15 @@ print(normalized_mfcc_lift.shape);
 print(normalized_mfcc_lift);
 print("\n");
 
+print("MFCC Lift type:")
+print(type(normalized_mfcc_lift))
+print("\n")
+
+# Save this to numpy to be used by KMeansCluster and LBG
+np_file = fileDir + speaker + "_mfcc_lift"
+np.save(np_file, normalized_mfcc_lift)
+
+# Save this to a .mat file to be used in MATLAB for LBG clustering
 s1_mfcc = 's1_mfcc'
 scipy.io.savemat(outputFile, mdict={'mfcc': normalized_mfcc_lift}); 
 #scipy.io.savemat(outputFile, mdict={'mfcc': normalized_mfcc}); 
@@ -253,7 +263,7 @@ eps = 0.01
 K = 2 
 #lbg = LBG(eps, K)
 #clusters = lbg.run_clustering(mfccs.T)
-lbg.run_lbg();
+#lbg.run_lbg();
 
 # Plot the function outputs in a separate window
 #from IPython import get_ipython
