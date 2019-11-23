@@ -59,6 +59,26 @@ def assignment(df, centroids):
 
     return [centroid_distance_cols, df]
 
+# Calculate average distortion betwen centroids and data points
+def average_distortion(df, centroid_distance_cols):
+    total_dists = {}
+    total_sum = 0
+    for x in centroid_distance_cols: 
+        key = int(x.lstrip('distance_from_'))
+        idx = df.index[df.loc[:, 'closest'] == key].tolist()
+        dists = df[x][idx]    
+        total_dists[x] = np.sum(dists)
+        total_sum = total_sum + total_dists[x]
+    aver_dist = total_sum/M
+    
+    print("Average Distortion:");
+    print("Total Dists:")
+    print(total_dists)
+    print("    => Total dist. = " + str(total_sum))
+    print("    => Aver. Distortion = " + str(aver_dist))
+    print("\n")
+    return aver_dist
+
 # --------------------------------------------
 # Update the cluster with new centroid means
 # --------------------------------------------
@@ -138,25 +158,7 @@ while True:
     print("\n")
     
     # Get all distances for each closest key and average 
-    total_dists = {}
-    total_sum = 0
-    print("Total Distortion:");
-    for x in centroid_distance_cols: 
-        print("Distance col = " + str(x));    
-        key = int(x.lstrip('distance_from_'))
-        idx = df.index[df.loc[:, 'closest'] == key].tolist()
-        print("index = " + str(idx))
-        dists = df[x][idx]    
-        total_dists[x] = np.sum(dists)
-        total_sum = total_sum + total_dists[x]
-        print(dists)
-        print("\n")
-    aver_dist = total_sum/M
-    print("Total Dists:")
-    print(total_dists)
-    print("    => Total dist. = " + str(total_sum))
-    print("    => Aver. Distortion = " + str(aver_dist))
-    print("\n")
+    mean_dist = average_distortion(df, centroid_distance_cols) 
 
     fig = plt.figure(figsize=(5,5))
     plt.scatter(df['x'], df['y'], color=df['color'], alpha=0.2, edgecolor='k')

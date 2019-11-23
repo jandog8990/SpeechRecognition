@@ -25,7 +25,7 @@ N = 6;          # number of speakers (used for npy output)
 MCOUNT = 1;     # centroid tracking index (used for split)
 K = 16;         # number of codewords per codebook
 delta = 0.01;   # delta for splitting the centroids
-eps = 4.9;      # epsilon distortion limit for centroids
+eps = 0.0002;      # epsilon distortion limit for centroids
 
 # Color map for centroids and data partition clusters
 colormap = {1: 'blueviolet', 2: 'forestgreen', 3: 'deeppink', 4: 'dodgerblue', 5: 'indigo', 6: 'gold', 7: 'darkgray', 8: 'red', 9: 'lawngreen', 10: 'sienna', 11: 'olive', 12: 'salmon', 13: 'steelblue', 14: 'mediumblue', 15: 'purple', 16: 'peru'}
@@ -62,6 +62,22 @@ print("Data Frame:")
 print(data_frame.shape)
 print(data_frame)
 print("\n")
+
+# --------------------------------------------------------------------------------
+# Calculate average distortion betwen centroids and data points
+# --------------------------------------------------------------------------------
+def average_distortion(df, centroid_distance_cols):
+    total_dists = {}
+    total_sum = 0
+    for x in centroid_distance_cols: 
+        key = int(x.lstrip('distance_from_'))
+        idx = df.index[df.loc[:, 'closest'] == key].tolist()
+        dists = df[x][idx]    
+        total_dists[x] = np.sum(dists)
+        total_sum = total_sum + total_dists[x]
+    aver_dist = total_sum/M
+    
+    return [total_sum, aver_dist]
 
 # --------------------------------------------------------------------------------
 # Centroid split when the distortion drops below threshold (epsilon) 
@@ -156,21 +172,28 @@ plt.show()
 '''
 
 # Calculate the initial neighbor partitions
-[centroid_distance_cols, df] = nearest_neighbor(data_frame, centroids)
+[centroid_distance_cols, data_frame] = nearest_neighbor(data_frame, centroids)
+  
+# Compute initial average distortion
+[total_dist, mean_dist] = average_distortion(data_frame, centroid_distance_cols)
+
+print("Final Data Frame:")
+print(data_frame.shape)
+print(data_frame);
+print("\n")
    
 # Show the final DataFrame of minimum distances
 print("Centroid Distance Cols:")
 print(centroid_distance_cols)
 print("\n")
 
-print("Final Data Frame:")
-print(df.shape)
-print(df);
+print("Total Distortion = " + str(total_dist))
+print("Average Distortion = " + str(mean_dist))
 print("\n")
-  
+
 # Plot the updated centroids prior to the loop of fitting
 fig = plt.figure(figsize=(5,5))
-plt.scatter(data_frame['g'], data_frame['h'], color=df['color'], alpha=0.2, edgecolor='k')
+plt.scatter(data_frame['g'], data_frame['h'], color=data_frame['color'], alpha=0.2, edgecolor='k')
 for i in centroids.keys():
     plt.scatter(*centroids[i][7:9], color=colormap[i])
 plt.show()
@@ -191,25 +214,46 @@ Framework for Centroid Searching:
         else:
             -> Step 2 (split the centroids) 
 """
-print("Old Centroids:")
-print(centroids)
-print("-------------------")
-centroids = update_centroids(df, centroids)
-print("Updated Centroids:")
-print(centroids)
-print("\n")
-
-fig = plt.figure(figsize=(5,5))
-plt.scatter(data_frame['g'], data_frame['h'], color=df['color'], alpha=0.2, edgecolor='k')
-for i in centroids.keys():
-    plt.scatter(*centroids[i][7:9], color=colormap[i])
-plt.show()
-
-"""
 count = 0;
 print("LBG Main Loop:");
 while True:
     print("COUNT = " + str(count));
-    old_centroids = df['closest'].copy(deep=True)
-    centroids = update_centroids(centroids)
-"""
+    # Old centroid closest vector (used for final checks) 
+    old_centroids = data_frame['closest'].copy(deep=True)
+
+    # Old mean distortion (i.e. D[n-1])
+    old_mean_dist = mean_dist
+
+    # Update centroids and calculate nearest neighbors
+    centroids = update_centroids(data_frame, centroids)
+    [centroid_distance_cols, data_frame] = nearest_neighbor(data_frame, centroids)
+    [M, N] = data_frame.shape
+  
+    # Compute average distortion and threshold distorition
+    [total_dist, mean_dist] = average_distortion(data_frame, centroid_distance_cols)
+    thresh_dist = (old_mean_dist - mean_dist)/mean_dist
+    print("    => Total Distortion      = " + str(total_dist))
+    print("    => Old Aver Distortion   = " + str(old_mean_dist)) 
+    print("    => Aver. Distortion      = " + str(mean_dist))
+    print("    => Thresh. Distortion    = " + str(thresh_dist))
+    print("\n")
+
+
+    # Plot the updated centroids prior to the loop of fitting
+    fig = plt.figure(figsize=(5,5))
+    plt.scatter(data_frame['g'], data_frame['h'], color=data_frame['color'], alpha=0.2, edgecolor='k')
+    for i in centroids.keys():
+        plt.scatter(*centroids[i][7:9], color=colormap[i])
+    plt.show()
+
+    # First check if new centroids equal previous centroids (i.e. convergence)
+    if (old_centroids.equals(data_frame['closest'])): 
+        print("OLD CENTROIDS == NEW CENTROIDS!!!! YAYYYY!!!!!")
+        print("\n")
+        break;
+    if (thresh_dist < eps):  
+        print("THRESHOLD DIST < EPS = " + str(thresh_dist));
+        print("\n")
+        break;
+    
+    count = count + 1 
