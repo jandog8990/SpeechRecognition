@@ -63,7 +63,6 @@ def assignment(df, centroids):
 # Update the cluster with new centroid means
 # --------------------------------------------
 def update(k):
-
     for i in centroids.keys():
         # average all x and y coordinates for a given centroid based on current clusters
         centroids[i][0] = np.mean(df[df['closest'] == i]['x'])
@@ -121,6 +120,10 @@ print("While Loop:")
 count = 0
 while True:
     print("COUNT = " + str(count))
+    print("Old Centroids:")
+    print(centroids);
+    print("\n")
+    
     old_centroids = df['closest'].copy(deep=True)
     centroids = update(centroids)
     [centroid_distance_cols, df] = assignment(df, centroids)

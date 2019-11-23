@@ -38,23 +38,26 @@ for i in np.arange(1, N):
     mfcc = np.load(filename)
     MFCC[i] = mfcc
 
+# TODO Will use a loop over all speakers and pull MFCC for each
 # Will test on one speaker MFCC matrix
 mfcc = MFCC[1]
 [M, N] = mfcc.shape
-test_mat = mfcc[:, 0:2]
-print("mfcc:");
-print(mfcc.shape);
-print(mfcc);
-print("\n");
 
 # Create the DataFrame with all of the MFCC data vectors
 data = {}
+axes = {} 
 print("Data:")
 for i in range(M):
     axis = string.ascii_lowercase[i]
+    axes[i] = axis 
     row = mfcc[i,:]
     data[axis] = row
 data_frame = pd.DataFrame(data)
+print("Axes:")
+print(len(axes))
+print(axes)
+print("\n")
+
 print("Data Frame:")
 print(data_frame.shape)
 print(data_frame)
@@ -72,8 +75,8 @@ def centroid_split(M, centroids):
     print("\n")
    
     # Update centroids with close centroids
-    centroids[2*M - 1] = centroids[M] + delta
-    centroids[2*M] = centroids[M] - delta
+    centroids[2*M - 1] = centroids[M] * (1+delta)
+    centroids[2*M] = centroids[M] * (1-delta)
     M = 2*M 
 
     return [M, centroids]
@@ -82,41 +85,22 @@ def centroid_split(M, centroids):
 # Nearest-Neighbor Assignment (i.e. assign 19-d vectors to nearest centroids)
 # --------------------------------------------------------------------------------
 def nearest_neighbor(df, centroids):
-    # data frame keys
-    df_keys = df.keys()
 
-    print("Centroids Length:")
-    print(len(centroids));
-    print("\n")
-
-    print("DataFrame keys:")
-    print(df_keys)
-    print("\n")
-
+    # loop through the centroids to calculate distances
     for i in centroids.keys():
         diff_sum = 0 
-        for j in range(len(df_keys)):
-            df_key = df_keys[j]
+        # loop through axes for coordinates of each dimension 
+        for j in range(len(axes)):
+            axis = axes[j] 
             ci = centroids[i][j]
-            print("[i, j] = [" + str(i) + ", " + str(j) + "]"); 
-            print("DF key = " + str(df_key))
-            print("Centroid val = " + str(ci))
             
             # Sum of all the dimensional vectors
-            #diff_sum = diff_sum + (df[df_key] - ci)
-            diff_sq = (df[df_key] - ci)**2
+            diff_sq = (df[axis] - ci)**2
             diff_sum = diff_sum + diff_sq 
-            print("Dataframe axis difference:")
-            print(len(diff_sq)) 
-            print(diff_sq)
-            print("\n")
         
         # Assign the final distance calculations to the distance from column
         distance_from = np.sqrt(diff_sum) 
         df['distance_from_{}'.format(i)] = distance_from
-        print("Distance from " + str(i) + ":")
-        print(distance_from)
-        print("\n")
 
     # Set the distance from centroid column in the data frame
     centroid_distance_cols = ['distance_from_{}'.format(i) for i in centroids.keys()]
@@ -131,16 +115,18 @@ def nearest_neighbor(df, centroids):
 # --------------------------------------------------------------------------------
 # Update the centroids according to the new averages of partitions
 # --------------------------------------------------------------------------------
+def update_centroids(df, centroids):
+    
+    # loop through the centroids and calculate the means of the closest vectors
+    for i in centroids.keys():
+        # loop through the axes in order to calculate averages 
+        for j in range(len(axes)):
+            axis = axes[j]
 
-
-# Pull the first row and average for a test
-row1 = mfcc[1,:]
-row1m = np.mean(row1)
-row1s = np.sum(row1)
-print("Row 1 sum = " + str(row1s))
-print("Row 1 mean NP = " + str(row1m))
-print("Row 1 mean = " + str(float(row1s/N)))
-print("\n")
+            # average all dimension coordinates for a given centroid (i.e. [a, b, c, ...]
+            centroids[i][j] = np.mean(df[df['closest'] == i][axis])
+    
+    return centroids
 
 # Create the initial centroid
 centroids = {}
@@ -152,7 +138,7 @@ print("\n");
 
 # Create the split using the delta given perturbation factor
 [MCOUNT, centroids] = centroid_split(MCOUNT, centroids)
-print("Updated Centroids:")
+print("Split Centroids:")
 print("MCOUNT = " + str(MCOUNT))
 print(len(centroids))
 print(centroids)
@@ -161,14 +147,13 @@ print("\n");
 
 # Print the initial data along with the first centroid
 # We will plot the first two columns
+'''
 fig = plt.figure(figsize=(5,5))
 plt.scatter(data_frame['g'], data_frame['h'], color='lightgray')
 for i in centroids.keys():
-    print("[centroid, color] = " + str(i) + ", " + str(colormap[i]) + "]") 
-    print(*centroids[i][7:9]) 
-    print("-----------------------"); 
     plt.scatter(*centroids[i][7:9], color=colormap[i])
 plt.show()
+'''
 
 # Calculate the initial neighbor partitions
 [centroid_distance_cols, df] = nearest_neighbor(data_frame, centroids)
@@ -179,6 +164,7 @@ print(centroid_distance_cols)
 print("\n")
 
 print("Final Data Frame:")
+print(df.shape)
 print(df);
 print("\n")
   
@@ -186,9 +172,6 @@ print("\n")
 fig = plt.figure(figsize=(5,5))
 plt.scatter(data_frame['g'], data_frame['h'], color=df['color'], alpha=0.2, edgecolor='k')
 for i in centroids.keys():
-    print("[centroid, color] = " + str(i) + ", " + str(colormap[i]) + "]") 
-    print(*centroids[i][7:9]) 
-    print("-----------------------"); 
     plt.scatter(*centroids[i][7:9], color=colormap[i])
 plt.show()
  
@@ -208,4 +191,25 @@ Framework for Centroid Searching:
         else:
             -> Step 2 (split the centroids) 
 """
+print("Old Centroids:")
+print(centroids)
+print("-------------------")
+centroids = update_centroids(df, centroids)
+print("Updated Centroids:")
+print(centroids)
+print("\n")
 
+fig = plt.figure(figsize=(5,5))
+plt.scatter(data_frame['g'], data_frame['h'], color=df['color'], alpha=0.2, edgecolor='k')
+for i in centroids.keys():
+    plt.scatter(*centroids[i][7:9], color=colormap[i])
+plt.show()
+
+"""
+count = 0;
+print("LBG Main Loop:");
+while True:
+    print("COUNT = " + str(count));
+    old_centroids = df['closest'].copy(deep=True)
+    centroids = update_centroids(centroids)
+"""
