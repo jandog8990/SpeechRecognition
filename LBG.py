@@ -21,13 +21,14 @@ import string
 # TODO THis is a test to see if we can even get the codes
 # Load the current MFCC Lifted numpy arrays from file
 npy_dir = "./train/";
-N = 6;
+N = 6;          # number of speakers (used for npy output)
+MCOUNT = 1;     # centroid tracking index (used for split)
+K = 16;         # number of codewords per codebook
 delta = 0.01;   # delta for splitting the centroids
 eps = 4.9;      # epsilon distortion limit for centroids
-k = 16;         # number of codewords per codebook
 
 # Color map for centroids and data partition clusters
-colormap = {0: 'r', 1: 'g', 2: 'b', 3: 'p', 4: 'c', 5: 'm', 6: 'y', 7: 'gray', 8: 'greenyellow'}
+colormap = {1: 'blueviolet', 2: 'forestgreen', 3: 'deeppink', 4: 'dodgerblue', 5: 'indigo', 6: 'gold', 7: 'darkgray', 8: 'red', 9: 'lawngreen', 10: 'sienna', 11: 'olive', 12: 'salmon', 13: 'steelblue', 14: 'mediumblue', 15: 'purple', 16: 'peru'}
 
 MFCC = {}
 # From the MFCC we will use LBG algorithm to find distances (clustering)
@@ -59,7 +60,27 @@ print(data_frame.shape)
 print(data_frame)
 print("\n")
 
+# --------------------------------------------------------------------------------
+# Centroid split when the distortion drops below threshold (epsilon) 
+# --------------------------------------------------------------------------------
+def centroid_split(M, centroids):
+    print("Centroid Split:")
+    print("M = " + str(M))
+    print("delta = " + str(delta)) 
+    print("centroids keys:");
+    print(centroids.keys())
+    print("\n")
+   
+    # Update centroids with close centroids
+    centroids[2*M - 1] = centroids[M] + delta
+    centroids[2*M] = centroids[M] - delta
+    M = 2*M 
+
+    return [M, centroids]
+
+# --------------------------------------------------------------------------------
 # Nearest-Neighbor Assignment (i.e. assign 19-d vectors to nearest centroids)
+# --------------------------------------------------------------------------------
 def nearest_neighbor(df, centroids):
     # data frame keys
     df_keys = df.keys()
@@ -107,6 +128,10 @@ def nearest_neighbor(df, centroids):
 
     return [centroid_distance_cols, df]
 
+# --------------------------------------------------------------------------------
+# Update the centroids according to the new averages of partitions
+# --------------------------------------------------------------------------------
+
 
 # Pull the first row and average for a test
 row1 = mfcc[1,:]
@@ -119,26 +144,30 @@ print("\n")
 
 # Create the initial centroid
 centroids = {}
-centroid = np.mean(mfcc, axis=1)
-print("Centroid:")
-print(centroid.shape)
-print(centroid)
+centroids[1] = np.mean(mfcc, axis=1)
+print("Initial Centroid:")
+print(len(centroids))
+print(centroids)
 print("\n");
 
 # Create the split using the delta given perturbation factor
-centroids[0] = centroid - delta
-centroids[1] = centroid + delta
-print("Centroid Dict:")
+[MCOUNT, centroids] = centroid_split(MCOUNT, centroids)
+print("Updated Centroids:")
+print("MCOUNT = " + str(MCOUNT))
+print(len(centroids))
 print(centroids)
-print("\n")
+print("\n");
+
 
 # Print the initial data along with the first centroid
 # We will plot the first two columns
 fig = plt.figure(figsize=(5,5))
-plt.scatter(data_frame['g'], data_frame['h'], color='k')
+plt.scatter(data_frame['g'], data_frame['h'], color='lightgray')
 for i in centroids.keys():
-    print("key = " + str(i));
-    plt.scatter(*centroids[i][6:8], color=colormap[i])
+    print("[centroid, color] = " + str(i) + ", " + str(colormap[i]) + "]") 
+    print(*centroids[i][7:9]) 
+    print("-----------------------"); 
+    plt.scatter(*centroids[i][7:9], color=colormap[i])
 plt.show()
 
 # Calculate the initial neighbor partitions
@@ -157,6 +186,26 @@ print("\n")
 fig = plt.figure(figsize=(5,5))
 plt.scatter(data_frame['g'], data_frame['h'], color=df['color'], alpha=0.2, edgecolor='k')
 for i in centroids.keys():
-    print("key = " + str(i));
-    plt.scatter(*centroids[i][6:8], color=colormap[i])
+    print("[centroid, color] = " + str(i) + ", " + str(colormap[i]) + "]") 
+    print(*centroids[i][7:9]) 
+    print("-----------------------"); 
+    plt.scatter(*centroids[i][7:9], color=colormap[i])
 plt.show()
+ 
+"""
+Framework for Centroid Searching:
+    1. Centroid Split (Step 2)
+        -> Divide current centroids into two (2*MCOUNT) 
+        -> Set the difference as delta separation
+    2. Distortion check (Step 6)
+        if (D[n-1] - D[n])/D[n] > epsilon:
+            -> Step 3 (Nearest-neighbor search)
+        else:
+            -> Step 7 (Codebook check) 
+    3 . Codebook check
+        if (MCOUNT == K):
+            -> MCOUNT = K, number of codewords for codebook is reached (BREAK)
+        else:
+            -> Step 2 (split the centroids) 
+"""
+

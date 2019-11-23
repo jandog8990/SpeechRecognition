@@ -117,7 +117,6 @@ plt.ylim(0, 80)
 plt.show()
 
 # Continue until all assigned categories do not change
-'''
 print("While Loop:")
 count = 0
 while True:
@@ -168,6 +167,3 @@ while True:
     if old_centroids.equals(df['closest']):
         break
     count = count + 1
-
-
-'''
