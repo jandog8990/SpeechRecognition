@@ -3,8 +3,8 @@ LBG Clustering Algorithm
 
 Partition n observations into K clusters
 
-TODO: This will be transferred to an LBG algorithm to calculate
-        acoustic vectors for speech recognition
+TODO: Need to train this on multiple speakers (consider cmd line loop)
+        Also need to be able to run this with test data
 
 1. Initialization - K initial "means" centroids are generated at random
 2. Assignment - K clusters are created by associating each observation w nearest centroid
@@ -177,6 +177,9 @@ plt.show()
 # Compute initial average distortion
 [total_dist, mean_dist] = average_distortion(data_frame, centroid_distance_cols)
 
+# Update the centroids for the new distances
+centroids = update_centroids(data_frame, centroids)
+
 print("Final Data Frame:")
 print(data_frame.shape)
 print(data_frame);
@@ -225,7 +228,6 @@ while True:
     old_mean_dist = mean_dist
 
     # Update centroids and calculate nearest neighbors
-    centroids = update_centroids(data_frame, centroids)
     [centroid_distance_cols, data_frame] = nearest_neighbor(data_frame, centroids)
     [M, N] = data_frame.shape
   
@@ -238,6 +240,8 @@ while True:
     print("    => Thresh. Distortion    = " + str(thresh_dist))
     print("\n")
 
+    # Update the centroids
+    centroids = update_centroids(data_frame, centroids)
 
     # Plot the updated centroids prior to the loop of fitting
     fig = plt.figure(figsize=(5,5))
@@ -247,13 +251,29 @@ while True:
     plt.show()
 
     # First check if new centroids equal previous centroids (i.e. convergence)
-    if (old_centroids.equals(data_frame['closest'])): 
+    if (old_centroids.equals(data_frame['closest'])) or (thresh_dist < eps): 
         print("OLD CENTROIDS == NEW CENTROIDS!!!! YAYYYY!!!!!")
+        print("OR THRESHOLD REACHED YAYYYY!!!!!!") 
+        print("-------- ------- ------- ------- ------- ------"); 
+        
+        # Check the centroid count (i.e. codewords we need K codewords per code_book)
+        print("MCOUNT = " + str(MCOUNT));
+        print("K = " + str(K));
         print("\n")
-        break;
-    if (thresh_dist < eps):  
-        print("THRESHOLD DIST < EPS = " + str(thresh_dist));
-        print("\n")
-        break;
+     
+        # Split the centroids 
+        if (MCOUNT != K): 
+            [MCOUNT, centroids] = centroid_split(MCOUNT, centroids)
+            print("Split Centroids:")
+            print("MCOUNT = " + str(MCOUNT))
+            print(len(centroids))
+            print(centroids)
+            print(" => CONTINUE!") 
+            print("\n");
+            continue 
+        else:
+            print("MCOUNT == K == " + str(MCOUNT));
+            print("BREAK!!!!");
+            break;
     
     count = count + 1 

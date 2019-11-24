@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 
 # Local import classes
 from MFCC import MFCC 
-from LBG import LBG
 from sklearn import preprocessing
 
 import sys
@@ -257,13 +256,6 @@ scipy.io.savemat(outputFile, mdict={'mfcc': normalized_mfcc_lift});
 #scipy.io.savemat(outputFile, mdict={'mfcc': mfccs.T})
 #scipy.io.savemat(outputFile, mdict={outputKey: mfccs_lift.T})
 #scipy.io.savemat('./train/s1_mfcc.mat', mdict={s1_mfcc: mfccs.T})
-
-# Run LBG/K-Means Clustering algorithm
-eps = 0.01
-K = 2 
-#lbg = LBG(eps, K)
-#clusters = lbg.run_clustering(mfccs.T)
-#lbg.run_lbg();
 
 # Plot the function outputs in a separate window
 #from IPython import get_ipython
