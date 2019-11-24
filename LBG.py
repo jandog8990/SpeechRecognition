@@ -238,6 +238,7 @@ while True:
     print("    => Old Aver Distortion   = " + str(old_mean_dist)) 
     print("    => Aver. Distortion      = " + str(mean_dist))
     print("    => Thresh. Distortion    = " + str(thresh_dist))
+    print("    => Epsilon (thresh)      = " + str(eps))  
     print("\n")
 
     # Update the centroids
@@ -250,10 +251,10 @@ while True:
         plt.scatter(*centroids[i][7:9], color=colormap[i])
     plt.show()
 
+    # TODO This isn't being hit for the threshold epsilon check
     # First check if new centroids equal previous centroids (i.e. convergence)
     if (old_centroids.equals(data_frame['closest'])) or (thresh_dist < eps): 
-        print("OLD CENTROIDS == NEW CENTROIDS!!!! YAYYYY!!!!!")
-        print("OR THRESHOLD REACHED YAYYYY!!!!!!") 
+        print("THRESHOLD REACHED && OLD CENTROIDS == NEW CENTROIDS!!!! YAYYYY!!!!!")
         print("-------- ------- ------- ------- ------- ------"); 
         
         # Check the centroid count (i.e. codewords we need K codewords per code_book)
