@@ -3,11 +3,13 @@ clear all
 close all
 clc
 traindir = './train/s';
-N = 6;
+N = 7;
 k = 16;
 MFCC = {};
 code = {};
 names = [""];
+
+% Loop pull MFCC acoustic vectors from MAT files
 for i = 1:N
     name = "s" + string(i);
     file = traindir + string(i) + "_mfcc.mat";
@@ -19,6 +21,8 @@ for i = 1:N
 %     s{i} = load(file);
 %     code{i} = vqlbg(mfcc, k);
 end
+
+% Loop calculates VQ codebooks using LBG algo
 for i = 1:N
     code{i} = vqlbg(MFCC{i}, k);
 end

@@ -23,9 +23,9 @@ import string
 npy_dir = "./train/";
 N = 6;          # number of speakers (used for npy output)
 MCOUNT = 1;     # centroid tracking index (used for split)
-K = 16;         # number of codewords per codebook
+K = 8;         # number of codewords per codebook
 delta = 0.01;   # delta for splitting the centroids
-eps = 0.0002;      # epsilon distortion limit for centroids
+eps = 0.001;      # epsilon distortion limit for centroids
 
 # Color map for centroids and data partition clusters
 colormap = {1: 'blueviolet', 2: 'forestgreen', 3: 'deeppink', 4: 'dodgerblue', 5: 'indigo', 6: 'gold', 7: 'darkgray', 8: 'red', 9: 'lawngreen', 10: 'sienna', 11: 'olive', 12: 'salmon', 13: 'steelblue', 14: 'mediumblue', 15: 'purple', 16: 'peru'}
@@ -83,24 +83,38 @@ def average_distortion(df, centroid_distance_cols):
 # Centroid split when the distortion drops below threshold (epsilon) 
 # --------------------------------------------------------------------------------
 def centroid_split(M, centroids):
+    cc = copy.deepcopy(centroids)
+    centroid_keys = cc.keys()
     print("Centroid Split:")
+    print("Len centroids = " + str(len(centroids)))  
     print("M = " + str(M))
     print("delta = " + str(delta)) 
     print("centroids keys:");
-    print(centroids.keys())
+    print(centroid_keys)
     print("\n")
+
+    # Loop through centroids and split each into two
+    for i in centroid_keys: 
+        # update centroids with close centroids
+        centroids[2*i - 1] = centroids[i] * (1+delta)
+        centroids[2*i] = centroids[i] * (1-delta)
    
-    # Update centroids with close centroids
-    centroids[2*M - 1] = centroids[M] * (1+delta)
-    centroids[2*M] = centroids[M] * (1-delta)
-    M = 2*M 
+    M = len(centroids)
 
     return [M, centroids]
 
 # --------------------------------------------------------------------------------
 # Nearest-Neighbor Assignment (i.e. assign 19-d vectors to nearest centroids)
 # --------------------------------------------------------------------------------
-def nearest_neighbor(df, centroids):
+def nearest_neighbor(MCOUNT, count, df, centroids):
+   
+    if (count == 10):
+        if (MCOUNT >= 8):
+            print("Nearest Neighbor:")
+            print("------------------------------------------------------------------")
+            print("Centroids (len = " + str(len(centroids)) + "):")
+            print(centroids)
+            print("\n")
 
     # loop through the centroids to calculate distances
     for i in centroids.keys():
@@ -111,11 +125,34 @@ def nearest_neighbor(df, centroids):
             ci = centroids[i][j]
             
             # Sum of all the dimensional vectors
-            diff_sq = (df[axis] - ci)**2
+            diff_sq = (df[axis] - ci) ** 2
             diff_sum = diff_sum + diff_sq 
+            
+            if (count == 10):
+                if (MCOUNT >= 8):
+                    if (j <= 2): 
+                        print("------------------------------------------------------------")
+                        print("axis = " + str(axis))
+                        print("df[" + str(axis) + "]:")
+                        print(df[axis])
+                        print("\n")
+                        print("centroid[" + str(i) + ", " + str(j) + "]:")
+                        print(ci);
+                        print("Diff squared = " + str(diff_sq))
+                        print("Diff sum = " + str(diff_sum))
+                        print("------------------------------------------------------------")
+                        print("\n")
         
         # Assign the final distance calculations to the distance from column
         distance_from = np.sqrt(diff_sum) 
+        if (count == 10):
+            if (MCOUNT >= 8):
+                print("COUNT = " + str(count));
+                print("Distance from [" + str(i) + "]:")
+                print(distance_from)
+                print("------------------------------------------------------------------")
+                print("\n")
+            
         df['distance_from_{}'.format(i)] = distance_from
 
     # Set the distance from centroid column in the data frame
@@ -131,13 +168,25 @@ def nearest_neighbor(df, centroids):
 # --------------------------------------------------------------------------------
 # Update the centroids according to the new averages of partitions
 # --------------------------------------------------------------------------------
-def update_centroids(df, centroids):
+def update_centroids(MCOUNT, count, df, centroids):
     
     # loop through the centroids and calculate the means of the closest vectors
     for i in centroids.keys():
         # loop through the axes in order to calculate averages 
         for j in range(len(axes)):
             axis = axes[j]
+    
+            if (count >= 9):
+                if (MCOUNT >= 8):
+                    print("Centroid Key:")
+                    print(str(i))
+                    print("[j, Axis] = [" + str(j) + ", " + str(axis) + "]"); 
+                    print("\n")
+
+                    print("DF Closest:")
+                    print(df['closest'])
+                    print(centroids)
+                    print("\n")
 
             # average all dimension coordinates for a given centroid (i.e. [a, b, c, ...]
             centroids[i][j] = np.mean(df[df['closest'] == i][axis])
@@ -163,42 +212,40 @@ print("\n");
 
 # Print the initial data along with the first centroid
 # We will plot the first two columns
-'''
 fig = plt.figure(figsize=(5,5))
 plt.scatter(data_frame['g'], data_frame['h'], color='lightgray')
 for i in centroids.keys():
-    plt.scatter(*centroids[i][7:9], color=colormap[i])
+    plt.scatter(*centroids[i][6:8], color=colormap[i])
 plt.show()
-'''
 
 # Calculate the initial neighbor partitions
-[centroid_distance_cols, data_frame] = nearest_neighbor(data_frame, centroids)
+[centroid_distance_cols, data_frame] = nearest_neighbor(0, 0, data_frame, centroids)
   
 # Compute initial average distortion
 [total_dist, mean_dist] = average_distortion(data_frame, centroid_distance_cols)
 
 # Update the centroids for the new distances
-centroids = update_centroids(data_frame, centroids)
+centroids = update_centroids(0, 0, data_frame, centroids)
 
-print("Final Data Frame:")
-print(data_frame.shape)
-print(data_frame);
-print("\n")
-   
-# Show the final DataFrame of minimum distances
-print("Centroid Distance Cols:")
-print(centroid_distance_cols)
+print("Update Centroids Out:")
+print(len(centroids))
+print(centroids)
 print("\n")
 
-print("Total Distortion = " + str(total_dist))
-print("Average Distortion = " + str(mean_dist))
-print("\n")
+#print("Final Data Frame:")
+#print(data_frame.shape)
+#print(data_frame);
+#print("\n")   
+
+#print("Total Distortion = " + str(total_dist))
+#print("Average Distortion = " + str(mean_dist))
+#print("\n")
 
 # Plot the updated centroids prior to the loop of fitting
 fig = plt.figure(figsize=(5,5))
 plt.scatter(data_frame['g'], data_frame['h'], color=data_frame['color'], alpha=0.2, edgecolor='k')
 for i in centroids.keys():
-    plt.scatter(*centroids[i][7:9], color=colormap[i])
+    plt.scatter(*centroids[i][6:8], color=colormap[i])
 plt.show()
  
 """
@@ -218,9 +265,10 @@ Framework for Centroid Searching:
             -> Step 2 (split the centroids) 
 """
 count = 0;
-print("LBG Main Loop:");
 while True:
-    print("COUNT = " + str(count));
+    if count == 11:
+        break;
+        
     # Old centroid closest vector (used for final checks) 
     old_centroids = data_frame['closest'].copy(deep=True)
 
@@ -228,53 +276,77 @@ while True:
     old_mean_dist = mean_dist
 
     # Update centroids and calculate nearest neighbors
-    [centroid_distance_cols, data_frame] = nearest_neighbor(data_frame, centroids)
+    [centroid_distance_cols, data_frame] = nearest_neighbor(MCOUNT, count, data_frame, centroids)
     [M, N] = data_frame.shape
+    
+    # Check the Data Frames for distances
+#    dist_from = data_frame.filter(regex="distance_from")
+#    for k in dist_from.keys():
+#        print("Distance From [" + str(k) + "]:")
+#        print(dist_from[k])
+#        print("\n")
   
     # Compute average distortion and threshold distorition
     [total_dist, mean_dist] = average_distortion(data_frame, centroid_distance_cols)
     thresh_dist = (old_mean_dist - mean_dist)/mean_dist
-    print("    => Total Distortion      = " + str(total_dist))
-    print("    => Old Aver Distortion   = " + str(old_mean_dist)) 
-    print("    => Aver. Distortion      = " + str(mean_dist))
-    print("    => Thresh. Distortion    = " + str(thresh_dist))
-    print("    => Epsilon (thresh)      = " + str(eps))  
-    print("\n")
+    thresh_dist = abs(thresh_dist)
+#    print("    => Total Distortion      = " + str(total_dist))
+#    print("    => Old Aver Distortion   = " + str(old_mean_dist)) 
+#    print("    => Aver. Distortion      = " + str(mean_dist))
+#    print("    => Thresh. Distortion    = " + str(thresh_dist))
+#    print("    => Epsilon (thresh)      = " + str(eps))  
+#    print("\n")
 
     # Update the centroids
-    centroids = update_centroids(data_frame, centroids)
+    centroids = update_centroids(MCOUNT, count, data_frame, centroids)
+    if (count >= 9):
+        if (MCOUNT >= 8):
+            print("Updated Centroids:")
+            print(len(centroids))
+            print(centroids)
+            print("\n")
 
     # Plot the updated centroids prior to the loop of fitting
-    fig = plt.figure(figsize=(5,5))
-    plt.scatter(data_frame['g'], data_frame['h'], color=data_frame['color'], alpha=0.2, edgecolor='k')
-    for i in centroids.keys():
-        plt.scatter(*centroids[i][7:9], color=colormap[i])
-    plt.show()
+    # TODO Will plot the final clusters from the LBG output 
+#    fig = plt.figure(figsize=(5,5))
+#    plt.scatter(data_frame['j'], data_frame['k'], color=data_frame['color'], alpha=0.2, edgecolor='k')
+#    for i in centroids.keys():
+#        plt.scatter(*centroids[i][12:14], color=colormap[i], edgecolor='k')
+#    plt.show()
 
     # TODO This isn't being hit for the threshold epsilon check
     # First check if new centroids equal previous centroids (i.e. convergence)
     if (old_centroids.equals(data_frame['closest'])) or (thresh_dist < eps): 
-        print("THRESHOLD REACHED && OLD CENTROIDS == NEW CENTROIDS!!!! YAYYYY!!!!!")
-        print("-------- ------- ------- ------- ------- ------"); 
         
-        # Check the centroid count (i.e. codewords we need K codewords per code_book)
-        print("MCOUNT = " + str(MCOUNT));
-        print("K = " + str(K));
-        print("\n")
-     
         # Split the centroids 
         if (MCOUNT != K): 
+#            print("Split Centroids:")
+#            print("MCOUNT = " + str(MCOUNT))
+#            print("Centroids in:") 
+#            print(len(centroids))
+#            print("\n")
+            
             [MCOUNT, centroids] = centroid_split(MCOUNT, centroids)
-            print("Split Centroids:")
+
+            print("---------- Centroid Split K = " 
+                  + str(MCOUNT) + " ----------")
+            print("Count = " + str(count)) 
             print("MCOUNT = " + str(MCOUNT))
+            print("Centroids out:") 
             print(len(centroids))
             print(centroids)
-            print(" => CONTINUE!") 
-            print("\n");
+            print("\n")
+            
             continue 
         else:
-            print("MCOUNT == K == " + str(MCOUNT));
             print("BREAK!!!!");
+            print("Count = " + str(count)) 
+            print("MCOUNT == K == " + str(MCOUNT));
+            print("Final Centroids:")
+            print(len(centroids))
+            print(centroids)
+            print("\n")
+            
             break;
     
     count = count + 1 

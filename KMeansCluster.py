@@ -31,8 +31,14 @@ print("\n")
 # ----------------------------------------------------------------------
 def assignment(df, centroids):
     for i in centroids.keys():
+        
+        print("Data Frame X:")
+        print(df['x'])
+        print("\n")
+        
         print("Centroid [i, 0] = [" + str(i) + ", 0]")
         print(centroids[i][0])
+        print("\n")
 
         # X difference vector
         diffx = df['x'] - centroids[i][0]
