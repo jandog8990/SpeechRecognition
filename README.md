@@ -4,7 +4,8 @@ This is a new repository for Math 572 Harmonic Analysis - Speech Recognition
 This project consists of two main sections (Signal Processing and LGB/K-means Clustering)
 
 ### How to run code
-$ 
+$ python MFCC.py - takes input audio files and converts to frequency spectrum
+$ python
 
 **Signal Processing**
 - Short Time FFT (ie windowing) for preserving frequency changes over time
